@@ -17,7 +17,7 @@ import { LoggerService } from './common/services/logger.service';
     MongooseModule.forRootAsync({
       imports: [ConfigModule, CommonModule],
       useFactory: (configService: ConfigService, loggerService: LoggerService) => {
-        const uri = configService.get('MONGODB_URI')! || 'mongodb://localhost:27017/learning_platform';
+        const uri = configService.get('MONGODB_URI');
         loggerService.logConnection(uri);
         
         return {

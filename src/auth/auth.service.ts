@@ -1,31 +1,29 @@
-import { Injectable, ConflictException, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import * as bcrypt from 'bcrypt';
-import { User } from '../users/entities/user.entity';
-import { RegisterDto } from './dto/register.dto';
-import { LoginDto } from './dto/login.dto';
+import { User, UserDocument } from '../users/entities/user.entity';
 
 @Injectable()
 export class AuthService {
   constructor(
-    @InjectModel(User.name) private userModel: Model<User>,
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
     private jwtService: JwtService,
   ) {}
 
-  async register(registerDto: RegisterDto) {
+  async register(registerDto: { email: string; password: string; firstName: string; lastName: string }) {
     const { email, password, firstName, lastName } = registerDto;
-
+    
     // Check if user already exists
     const existingUser = await this.userModel.findOne({ email });
     if (existingUser) {
-      throw new ConflictException('User with this email already exists');
+      throw new UnauthorizedException('User with this email already exists');
     }
-
+    
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
-
+    
     // Create new user
     const newUser = new this.userModel({
       email,
@@ -33,12 +31,16 @@ export class AuthService {
       firstName,
       lastName,
     });
-
+    
     await newUser.save();
-
+    
     // Generate JWT token
-    const token = this.generateToken(newUser);
-
+    const token = this.jwtService.sign({ 
+      sub: newUser._id,
+      email: newUser.email,
+      role: newUser.role,
+    });
+    
     return {
       token,
       user: {
@@ -51,24 +53,28 @@ export class AuthService {
     };
   }
 
-  async login(loginDto: LoginDto) {
+  async login(loginDto: { email: string; password: string }) {
     const { email, password } = loginDto;
-
+    
     // Find user by email
     const user = await this.userModel.findOne({ email });
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
-
+    
     // Verify password
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
     }
-
+    
     // Generate JWT token
-    const token = this.generateToken(user);
-
+    const token = this.jwtService.sign({ 
+      sub: user._id,
+      email: user.email,
+      role: user.role,
+    });
+    
     return {
       token,
       user: {
@@ -79,10 +85,5 @@ export class AuthService {
         role: user.role,
       },
     };
-  }
-
-  private generateToken(user: User) {
-    const payload = { sub: user._id, email: user.email, role: user.role };
-    return this.jwtService.sign(payload);
   }
 } 

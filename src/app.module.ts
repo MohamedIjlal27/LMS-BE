@@ -28,7 +28,7 @@ import { EnrollmentsModule } from './enrollments/enrollments.module';
           connectionFactory: (connection) => {
             connection.plugin(require('mongoose-autopopulate'));
             
-            // Log connection events
+
             connection.on('connected', () => {
               loggerService.logConnection(uri);
             });

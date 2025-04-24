@@ -14,16 +14,16 @@ export class StudentsService {
   ) {}
 
   async create(createStudentDto: CreateStudentDto): Promise<Student> {
-    // Check if user/student with this email already exists
+
     const existingUser = await this.userModel.findOne({ email: createStudentDto.email });
     if (existingUser) {
       throw new ConflictException('Email already exists');
     }
 
-    // Hash the password
+
     const hashedPassword = await bcrypt.hash(createStudentDto.password, 10);
 
-    // Create user record
+
     const user = await this.userModel.create({
       email: createStudentDto.email,
       password: hashedPassword,
@@ -32,11 +32,10 @@ export class StudentsService {
       role: 'student'
     });
 
-    // Create student record
     const createdStudent = new this.studentModel({
       ...createStudentDto,
       password: hashedPassword,
-      userId: user._id // Reference to the user record
+      userId: user._id 
     });
 
     return createdStudent.save();
@@ -68,19 +67,16 @@ export class StudentsService {
       throw new NotFoundException(`Student with ID ${id} not found`);
     }
 
-    // If password is being updated, hash it and update user record too
     if (updateStudentDto.password) {
       const hashedPassword = await bcrypt.hash(updateStudentDto.password, 10);
       updateStudentDto.password = hashedPassword;
-      
-      // Update the user's password as well
+ 
       await this.userModel.findOneAndUpdate(
         { email: student.email },
         { password: hashedPassword }
       );
     }
 
-    // If email is being updated, update user record too
     if (updateStudentDto.email) {
       await this.userModel.findOneAndUpdate(
         { email: student.email },
@@ -104,10 +100,10 @@ export class StudentsService {
       throw new NotFoundException(`Student with ID ${id} not found`);
     }
 
-    // Remove the associated user record
+
     await this.userModel.findOneAndDelete({ email: student.email });
 
-    // Remove the student record
+   
     const deletedStudent = await this.studentModel.findByIdAndDelete(id).exec();
     if (!deletedStudent) {
       throw new NotFoundException(`Student with ID ${id} not found`);

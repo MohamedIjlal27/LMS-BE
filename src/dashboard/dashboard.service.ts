@@ -17,21 +17,20 @@ export class DashboardService {
     const now = new Date();
     const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
 
-    // Get current counts
+
     const [totalStudents, totalCourses, totalEnrollments] = await Promise.all([
       this.studentModel.countDocuments(),
       this.courseModel.countDocuments(),
       this.enrollmentModel.countDocuments(),
     ]);
 
-    // Get last month's counts
     const [lastMonthStudents, lastMonthCourses, lastMonthEnrollments] = await Promise.all([
       this.studentModel.countDocuments({ createdAt: { $lt: lastMonth } }),
       this.courseModel.countDocuments({ createdAt: { $lt: lastMonth } }),
       this.enrollmentModel.countDocuments({ createdAt: { $lt: lastMonth } }),
     ]);
 
-    // Calculate revenue and growth
+
     const enrollments = await this.enrollmentModel.find().populate('course');
     const revenue = enrollments.reduce((total, enrollment) => total + (enrollment.course?.price || 0), 0);
     
@@ -39,7 +38,7 @@ export class DashboardService {
       .filter(e => new Date(e.createdAt) < lastMonth)
       .reduce((total, enrollment) => total + (enrollment.course?.price || 0), 0);
 
-    // Calculate growth percentages
+
     const studentGrowth = lastMonthStudents === 0 ? 100 : ((totalStudents - lastMonthStudents) / lastMonthStudents) * 100;
     const courseGrowth = lastMonthCourses === 0 ? 100 : ((totalCourses - lastMonthCourses) / lastMonthCourses) * 100;
     const enrollmentGrowth = lastMonthEnrollments === 0 ? 100 : ((totalEnrollments - lastMonthEnrollments) / lastMonthEnrollments) * 100;
@@ -102,8 +101,6 @@ export class DashboardService {
   }
 
   async getSystemStatus() {
-    // This is a simplified version. In a real application, you would
-    // implement actual system monitoring metrics
     return {
       serverStatus: 'Operational',
       activeUsers: await this.studentModel.countDocuments({ lastActive: { $gte: new Date(Date.now() - 15 * 60 * 1000) } }),

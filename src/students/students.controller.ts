@@ -22,7 +22,6 @@ export class StudentsController {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    // Remove password from response
     const { password, ...result } = student.toObject();
     return result;
   }

@@ -15,16 +15,14 @@ export class AuthService {
   async register(registerDto: { email: string; password: string; firstName: string; lastName: string }) {
     const { email, password, firstName, lastName } = registerDto;
     
-    // Check if user already exists
     const existingUser = await this.userModel.findOne({ email });
     if (existingUser) {
       throw new UnauthorizedException('User with this email already exists');
     }
     
-    // Hash password
+
     const hashedPassword = await bcrypt.hash(password, 10);
-    
-    // Create new user
+
     const newUser = new this.userModel({
       email,
       password: hashedPassword,
@@ -34,7 +32,7 @@ export class AuthService {
     
     await newUser.save();
     
-    // Generate JWT token
+
     const token = this.jwtService.sign({ 
       sub: newUser._id,
       email: newUser.email,
@@ -56,19 +54,18 @@ export class AuthService {
   async login(loginDto: { email: string; password: string }) {
     const { email, password } = loginDto;
     
-    // Find user by email
+
     const user = await this.userModel.findOne({ email });
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
     
-    // Verify password
+
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
     }
-    
-    // Generate JWT token
+
     const token = this.jwtService.sign({ 
       sub: user._id,
       email: user.email,
@@ -85,5 +82,13 @@ export class AuthService {
         role: user.role,
       },
     };
+  }
+
+  async getCurrentUser(userId: string) {
+    const user = await this.userModel.findById(userId).select('-password');
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+    return user;
   }
 } 

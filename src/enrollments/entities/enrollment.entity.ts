@@ -11,7 +11,7 @@ export class Enrollment extends Document {
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'Course', required: true })
   course: Course;
 
-  @Prop({ required: true, default: 'active' })
+  @Prop({ required: true, default: 'pending' })
   status: string;
 
   @Prop()
@@ -19,6 +19,18 @@ export class Enrollment extends Document {
 
   @Prop({ default: 0 })
   progress: number;
+
+  @Prop({ required: true, default: false })
+  isPaid: boolean;
+
+  @Prop()
+  paymentDate?: Date;
+
+  @Prop()
+  paymentMethod?: string;
+
+  @Prop()
+  transactionId?: string;
 
   @Prop()
   createdAt: Date;

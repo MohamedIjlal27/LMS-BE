@@ -8,6 +8,7 @@ import { CoursesModule } from './courses/courses.module';
 import { AuthModule } from './auth/auth.module';
 import { CommonModule } from './common/common.module';
 import { LoggerService } from './common/services/logger.service';
+import { StudentsModule } from './students/students.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { LoggerService } from './common/services/logger.service';
     CoursesModule,
     AuthModule,
     CommonModule,
+    StudentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

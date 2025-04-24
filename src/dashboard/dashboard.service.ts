@@ -101,10 +101,18 @@ export class DashboardService {
   }
 
   async getSystemStatus() {
+    // Get unique students with active enrollments
+    const activeUsers = await this.enrollmentModel.distinct('student').then(students => students.length);
+    const totalEnrollments = await this.enrollmentModel.countDocuments();
+
+    // Calculate system load based on enrollments
+    const systemLoad = Math.min(Math.round((totalEnrollments / 100) * 30), 100);
+
     return {
       serverStatus: 'Operational',
-      activeUsers: await this.studentModel.countDocuments({ lastActive: { $gte: new Date(Date.now() - 15 * 60 * 1000) } }),
-      systemLoad: Math.floor(Math.random() * 30) + 20, // Simulated load between 20-50%
+      activeUsers,
+      systemLoad,
+      lastUpdated: new Date().toISOString()
     };
   }
 } 

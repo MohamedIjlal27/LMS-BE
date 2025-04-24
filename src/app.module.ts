@@ -9,6 +9,8 @@ import { AuthModule } from './auth/auth.module';
 import { CommonModule } from './common/common.module';
 import { LoggerService } from './common/services/logger.service';
 import { StudentsModule } from './students/students.module';
+import { DashboardModule } from './dashboard/dashboard.module';
+import { EnrollmentsModule } from './enrollments/enrollments.module';
 
 @Module({
   imports: [
@@ -50,6 +52,8 @@ import { StudentsModule } from './students/students.module';
     AuthModule,
     CommonModule,
     StudentsModule,
+    DashboardModule,
+    EnrollmentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -1,11 +1,17 @@
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsBoolean, IsMongoId, IsOptional, IsString } from 'class-validator';
 
 export class CreateEnrollmentDto {
-  @IsNotEmpty()
-  @IsString()
+  @IsMongoId()
+  studentId: string;
+
+  @IsMongoId()
   courseId: string;
 
-  @IsNotEmpty()
   @IsString()
-  studentId: string;
+  @IsOptional()
+  status?: 'pending' | 'active' | 'completed' | 'in-progress';
+
+  @IsBoolean()
+  @IsOptional()
+  isPaid?: boolean;
 } 

@@ -9,10 +9,16 @@ import { ProcessPaymentDto } from './dto/process-payment.dto';
 export class EnrollmentsController {
   constructor(private readonly enrollmentsService: EnrollmentsService) {}
 
+  @Get()
+  @UseGuards(JwtAuthGuard)
+  async findAll() {
+    return this.enrollmentsService.findAll();
+  }
+
   @Post()
   @UseGuards(JwtAuthGuard)
   async createEnrollment(@Body() createEnrollmentDto: CreateEnrollmentDto) {
-    return this.enrollmentsService.createEnrollment(createEnrollmentDto);
+    return this.enrollmentsService.create(createEnrollmentDto);
   }
 
   @Get('check')
@@ -27,13 +33,13 @@ export class EnrollmentsController {
   @Get(':id')
   @UseGuards(JwtAuthGuard)
   async getEnrollment(@Param('id') id: string) {
-    return this.enrollmentsService.getEnrollment(id);
+    return this.enrollmentsService.findOne(id);
   }
 
   @Get('user/:userId')
   @UseGuards(JwtAuthGuard)
   async getUserEnrollments(@Param('userId') userId: string) {
-    return this.enrollmentsService.getUserEnrollments(userId);
+    return this.enrollmentsService.findByStudent(userId);
   }
 
   @Get('user/:userId/stats')

@@ -1,12 +1,12 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Schema as MongooseSchema } from 'mongoose';
-import { Student } from '../../students/entities/student.entity';
+import { User } from '../../users/entities/user.entity';
 import { Course } from '../../courses/entities/course.entity';
 
 @Schema({ timestamps: true })
 export class Enrollment extends Document {
-  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'Student', required: true })
-  student: Student;
+  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'User', required: true })
+  student: User;
 
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'Course', required: true })
   course: Course;
@@ -32,10 +32,8 @@ export class Enrollment extends Document {
   @Prop()
   transactionId?: string;
 
-  @Prop()
   createdAt: Date;
 
-  @Prop()
   updatedAt: Date;
 }
 

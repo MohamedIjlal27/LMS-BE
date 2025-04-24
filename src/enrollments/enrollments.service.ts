@@ -6,6 +6,7 @@ import { CreateEnrollmentDto } from './dto/create-enrollment.dto';
 import { ProcessPaymentDto } from './dto/process-payment.dto';
 import { Course } from '../courses/entities/course.entity';
 import { User } from '../users/entities/user.entity';
+import { UpdateEnrollmentDto } from './dto/update-enrollment.dto';
 
 @Injectable()
 export class EnrollmentsService {
@@ -18,14 +19,86 @@ export class EnrollmentsService {
     private readonly userModel: Model<User>,
   ) {}
 
-  async createEnrollment(createEnrollmentDto: CreateEnrollmentDto) {
+  async create(createEnrollmentDto: CreateEnrollmentDto) {
+    const student = await this.userModel.findById(createEnrollmentDto.studentId);
+    if (!student) {
+      throw new NotFoundException('Student not found');
+    }
+
+    const course = await this.courseModel.findById(createEnrollmentDto.courseId);
+    if (!course) {
+      throw new NotFoundException('Course not found');
+    }
+
     const enrollment = new this.enrollmentModel({
-      student: createEnrollmentDto.studentId,
-      course: createEnrollmentDto.courseId,
-      status: 'pending',
-      isPaid: false,
+      student: student._id,
+      course: course._id,
+      status: createEnrollmentDto.status || 'pending',
+      isPaid: createEnrollmentDto.isPaid || false,
     });
-    return enrollment.save();
+
+    const savedEnrollment = await enrollment.save();
+    return this.enrollmentModel
+      .findById(savedEnrollment._id)
+      .populate('student')
+      .populate('course')
+      .exec();
+  }
+
+  async findAll() {
+    return this.enrollmentModel
+      .find()
+      .populate('student')
+      .populate('course')
+      .sort({ createdAt: -1 })
+      .exec();
+  }
+
+  async findOne(id: string) {
+    const enrollment = await this.enrollmentModel
+      .findById(id)
+      .populate('student')
+      .populate('course')
+      .exec();
+
+    if (!enrollment) {
+      throw new NotFoundException('Enrollment not found');
+    }
+
+    return enrollment;
+  }
+
+  async update(id: string, updateEnrollmentDto: UpdateEnrollmentDto) {
+    const enrollment = await this.enrollmentModel
+      .findByIdAndUpdate(id, updateEnrollmentDto, { new: true })
+      .populate('student')
+      .populate('course')
+      .exec();
+
+    if (!enrollment) {
+      throw new NotFoundException('Enrollment not found');
+    }
+
+    return enrollment;
+  }
+
+  async remove(id: string) {
+    const enrollment = await this.enrollmentModel.findByIdAndDelete(id).exec();
+
+    if (!enrollment) {
+      throw new NotFoundException('Enrollment not found');
+    }
+
+    return enrollment;
+  }
+
+  async findByStudent(studentId: string) {
+    return this.enrollmentModel
+      .find({ student: studentId })
+      .populate('student')
+      .populate('course')
+      .sort({ createdAt: -1 })
+      .exec();
   }
 
   async processPayment(id: string, processPaymentDto: ProcessPaymentDto) {
@@ -34,7 +107,6 @@ export class EnrollmentsService {
       throw new NotFoundException('Enrollment not found');
     }
 
- 
     enrollment.isPaid = true;
     enrollment.status = 'active';
     enrollment.paymentDate = new Date();
@@ -57,64 +129,40 @@ export class EnrollmentsService {
     return enrollment.save();
   }
 
-  async getEnrollment(id: string) {
-    const enrollment = await this.enrollmentModel.findById(id);
-    if (!enrollment) {
-      throw new NotFoundException('Enrollment not found');
-    }
-    return enrollment;
+  async getUserStats(userId: string) {
+    const enrollments = await this.enrollmentModel
+      .find({ student: userId })
+      .populate('course')
+      .exec();
+
+    const totalCourses = enrollments.length;
+    const completedCourses = enrollments.filter(
+      (enrollment) => enrollment.status === 'completed',
+    ).length;
+    const inProgressCourses = enrollments.filter(
+      (enrollment) => enrollment.status === 'in-progress',
+    ).length;
+
+    const totalProgress = enrollments.reduce(
+      (sum, enrollment) => sum + enrollment.progress,
+      0,
+    );
+    const averageProgress =
+      totalCourses > 0 ? Math.round(totalProgress / totalCourses) : 0;
+
+    return {
+      totalCourses,
+      completedCourses,
+      inProgressCourses,
+      averageProgress,
+    };
   }
 
   async checkEnrollment(courseId: string, studentId: string) {
     const enrollment = await this.enrollmentModel.findOne({
       course: courseId,
       student: studentId,
-      status: 'active'
     });
     return { isEnrolled: !!enrollment };
-  }
-
-  async getUserEnrollments(userId: string) {
-    const enrollments = await this.enrollmentModel
-      .find({ student: userId, status: 'active' })
-      .populate('course')
-      .exec();
-
-    return enrollments.map(enrollment => ({
-      _id: enrollment.course._id,
-      title: enrollment.course.title,
-      description: enrollment.course.description,
-      instructor: enrollment.course.instructor,
-      image: enrollment.course.imageUrl,
-      progress: enrollment.progress,
-      lastAccessed: enrollment.updatedAt?.toLocaleDateString()
-    }));
-  }
-
-  async getUserStats(userId: string) {
-    const enrollments = await this.enrollmentModel
-      .find({ student: userId, status: 'active' })
-      .populate('course')
-      .exec();
-
-
-    const totalLearningTime = enrollments.reduce((total, enrollment) => {
-      const courseDuration = parseInt(enrollment.course.duration) || 0;
-      const progress = enrollment.progress || 0;
-      return total + (courseDuration * progress / 100);
-    }, 0);
-
-    const hours = Math.floor(totalLearningTime / 60);
-    const minutes = Math.round(totalLearningTime % 60);
-    const learningTime = `${hours}h ${minutes}m`;
-
-
-    const certificates = enrollments.filter(e => e.progress === 100).length;
-
-    return {
-      learningTime,
-      coursesEnrolled: enrollments.length,
-      certificates
-    };
   }
 } 
